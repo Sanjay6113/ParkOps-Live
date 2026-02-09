@@ -20,7 +20,7 @@ export default function GuestPage() {
   const [selectedRide, setSelectedRide] = useState<Ride | null>(null);
   const [reportType, setReportType] = useState("status_mismatch");
   const [message, setMessage] = useState("");
-  const [deviceHash, setDeviceHash] = useState<string>("guest-device" + Math.random().toString(36).slice(2));
+  const [deviceHash] = useState<string>("guest-device" + Math.random().toString(36).slice(2));
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
@@ -28,7 +28,7 @@ export default function GuestPage() {
     fetch(`${API_BASE}/rides?visible=true`)
       .then((res) => res.json())
       .then((data) => setRides(data))
-      .catch((err) => setError("Failed to load rides"))
+      .catch(() => setError("Failed to load rides"))
       .finally(() => setLoading(false));
   }, []);
 
@@ -54,7 +54,7 @@ export default function GuestPage() {
       setToast("Report received. Thank you!");
       setShowModal(false);
       setMessage("");
-    } catch (e) {
+    } catch {
       setToast("Failed to send report. Please try again.");
     } finally {
       setSubmitting(false);

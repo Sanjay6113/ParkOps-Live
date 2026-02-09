@@ -28,7 +28,6 @@ export default function AdminDashboard() {
   const [rides, setRides] = useState<Ride[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [editMode, setEditMode] = useState(false);
-  const [selectedRideId, setSelectedRideId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const socket = useMemo(() => io(`${API_BASE}/admin-alerts`), []);
 
@@ -81,6 +80,10 @@ export default function AdminDashboard() {
     }
   };
 
+  const updateRideState = (id: number, patch: Partial<Ride>) => {
+    setRides((prev) => prev.map((ride) => (ride.id === id ? { ...ride, ...patch } : ride)));
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <div className="mx-auto flex max-w-6xl flex-col gap-8 px-6 py-10">
@@ -88,6 +91,8 @@ export default function AdminDashboard() {
           <div>
             <p className="text-sm font-semibold text-indigo-600">Admin</p>
             <h1 className="text-3xl font-bold">Command Center</h1>
+            <p className="text-sm text-slate-600">Live rides and alert stream</p>
+          </div>
           <div className="flex items-center gap-3">
             <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
               <input
@@ -98,12 +103,12 @@ export default function AdminDashboard() {
               Enable editing
             </label>
           </div>
-            <p className="text-sm text-slate-600">Live rides and alert stream</p>
-          </div>
         </header>
 
         <section className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-3">
+            <h2 className="text-lg font-semibold">Rides</h2>
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
               <div className="grid grid-cols-6 gap-2 text-xs font-semibold text-slate-500">
                 <span>Name</span>
                 <span>Zone</span>
@@ -111,7 +116,7 @@ export default function AdminDashboard() {
                 <span>Wait</span>
                 <span>Edit</span>
                 <span>Actions</span>
-                <span>Wait</span>
+              </div>
               <div className="mt-2 divide-y divide-slate-100">
                 {rides.map((ride) => (
                   <div key={ride.id} className="grid grid-cols-6 items-center gap-2 py-2 text-sm">
@@ -127,7 +132,8 @@ export default function AdminDashboard() {
                           type="number"
                           defaultValue={ride.capacity ?? ""}
                           onBlur={(e) => {
-                            const capacity = Number(e.target.value || 0) || undefined;
+                            const capacity = e.target.value ? Number(e.target.value) : undefined;
+                            updateRideState(ride.id, { capacity });
                             updateRideMeta({ ...ride, capacity });
                           }}
                           className="w-20 rounded border border-slate-200 px-2 py-1 text-xs focus:border-indigo-400 focus:outline-none"
@@ -138,11 +144,12 @@ export default function AdminDashboard() {
                         <span className="w-14 text-xs text-slate-500">Visible</span>
                         <input
                           type="checkbox"
-                          defaultChecked={ride.settings?.isVisible ?? true}
-                          onChange={(e) => updateRideMeta({
-                            ...ride,
-                            settings: { ...ride.settings, isVisible: e.target.checked },
-                          })}
+                          checked={ride.settings?.isVisible ?? true}
+                          onChange={(e) => {
+                            const updatedSettings = { ...ride.settings, isVisible: e.target.checked };
+                            updateRideState(ride.id, { settings: updatedSettings });
+                            updateRideMeta({ ...ride, settings: updatedSettings });
+                          }}
                           disabled={!editMode || saving}
                         />
                       </div>
@@ -162,8 +169,10 @@ export default function AdminDashboard() {
                   </div>
                 ))}
               </div>
-                ))}
-              </div>
+            </div>
+
+            <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-4 text-sm text-slate-500">
+              Map placeholder (edit mode lets you drag pins to update coordinates)
             </div>
           </div>
 
